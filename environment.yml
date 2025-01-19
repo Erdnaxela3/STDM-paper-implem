@@ -1,0 +1,18 @@
+name: STDM-env
+
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+
+dependencies:
+  - conda-forge::python >=3.8.8
+  - conda-forge::numpy
+  - conda-forge::matplotlib
+  - conda-forge::scikit-learn
+  - conda-forge::pandas
+  - pip
+  - pytorch::pytorch >=1.8.1
+  - pip:
+    - pytest==8.3.4
+    - tqdm==4.67.1
