@@ -113,7 +113,8 @@ def evaluate_mean_imputer(
     with torch.no_grad():
         for i, (x_0, emb_time, m_miss, m) in enumerate(tqdm(dataloader, desc="Evaluating")):
             artificially_masked = m_miss - m
-            y_hat = x_0.mean(dim=1, keepdim=True).expand(-1, -1, x_0.size(2))
+            x_masked = x_0 * m
+            y_hat = x_masked.mean(dim=1, keepdim=True).expand(-1, -1, x_0.size(2))
             y, y_hat = x_0 * artificially_masked, y_hat * artificially_masked
             error = y - y_hat
             total_error.append(error.sum().item())
