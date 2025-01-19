@@ -51,6 +51,7 @@ def main(
     train_pickle: str = "train.pkl",
     val_pickle: str = "val.pkl",
     test_pickle: str = "test.pkl",
+    evaluate_only: bool = False,
 ):
     logging.info("Loading data")
 
@@ -83,8 +84,12 @@ def main(
         val[column_to_scale] = scaler.transform(val[column_to_scale])
         test[column_to_scale] = scaler.transform(test[column_to_scale])
     else:
-        train = pd.read_pickle(train_pickle)
-        val = pd.read_pickle(val_pickle)
+        if not evaluate_only:
+            train = pd.read_pickle(train_pickle)
+            val = pd.read_pickle(val_pickle)
+        else:
+            train = pd.DataFrame(columns=["permno", "yyyymm"])
+            val = pd.DataFrame(columns=["permno", "yyyymm"])
         test = pd.read_pickle(test_pickle)
 
     if save_datasets:
@@ -100,7 +105,7 @@ def main(
     logging.info(f"{len(val['permno'].unique())} permnos in val, records: {val.shape}")
     logging.info(f"{len(test['permno'].unique())} permnos in test, records: {test.shape}")
 
-    n_features = train.shape[1] - 2
+    n_features = test.shape[1] - 2
     stdm = STDM(n_features=n_features, n_channels=8, diffusion_output_dim=128, csp_output_dim=512, time_embed_dim=10)
 
     if train_model:
@@ -110,7 +115,7 @@ def main(
         logging.info("Training model")
         train_stdm(stdm, train_loader, val_loader, epochs, lr, device, save_model_dir=save_model_dir)
     elif load_model_path:
-        stdm.load_state_dict(torch.load(load_model_path, weights_only=True))
+        stdm.load_state_dict(torch.load(load_model_path, weights_only=True, map_location=device))
         stdm.to(device)
 
     test_loader = OSAPDataLoader(OSAPDataset(test), batch_size=test_batch_size, shuffle_masks=False)
@@ -129,6 +134,7 @@ if __name__ == "__main__":
 
     # data preprocessing
     parser.add_argument("--no-preprocessing", action="store_true", help="Do not preprocess the data")
+    parser.add_argument("--evaluate-only", action="store_true", help="Only load test data and evaluate the model")
     parser.add_argument("--save-datasets", action="store_true", help="Save the preprocessed datasets")
     parser.add_argument("--train-pickle", type=str, default="train.pkl", help="Path to the train dataset pickle")
     parser.add_argument("--val-pickle", type=str, default="val.pkl", help="Path to the validation dataset pickle")
@@ -210,4 +216,5 @@ if __name__ == "__main__":
         args.train_pickle,
         args.val_pickle,
         args.test_pickle,
+        args.evaluate_only,
     )

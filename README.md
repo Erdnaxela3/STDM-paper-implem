@@ -82,6 +82,7 @@ Evaluating a model by loading a pre-trained model:
 python main.py \
 --load-model-path "saved_models/stdm_epoch_152_val_loss_0.1172.pt" \
 --no-preprocessing \
+--evaluate-only \
 --test-batch-size 3
 ```
 
