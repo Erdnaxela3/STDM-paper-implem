@@ -41,7 +41,8 @@ def evaluate_stdm(
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.eval()
 
-    total_error = []
+    total_error = 0
+    total_squared_error = 0
     n_total = 0
     with torch.no_grad():
         for i, (x_0, emb_time, m_miss, m) in enumerate(tqdm(dataloader, desc="Evaluating")):
@@ -82,14 +83,14 @@ def evaluate_stdm(
 
             y, y_hat = x_0 * artificially_masked, predicted_x_0 * artificially_masked
             error = y - y_hat
-            total_error.append(error.sum().item())
 
+            total_error += error.abs().sum().item()
+            total_squared_error += (error**2).sum().item()
             n_total += artificially_masked.sum().item()
 
-    total_error = np.array(total_error)
     losses = {
-        "mse": (total_error**2).sum() / n_total,
-        "mae": (np.abs(total_error)).sum() / n_total,
+        "mse": total_squared_error / n_total,
+        "mae": total_error / n_total,
     }
     return losses
 
@@ -108,7 +109,8 @@ def evaluate_mean_imputer(
     -------
         losses: dict
     """
-    total_error = []
+    total_error = 0
+    total_squared_error = 0
     n_total = 0
     with torch.no_grad():
         for i, (x_0, emb_time, m_miss, m) in enumerate(tqdm(dataloader, desc="Evaluating")):
@@ -117,13 +119,13 @@ def evaluate_mean_imputer(
             y_hat = x_masked.mean(dim=1, keepdim=True).expand(-1, -1, x_0.size(2))
             y, y_hat = x_0 * artificially_masked, y_hat * artificially_masked
             error = y - y_hat
-            total_error.append(error.sum().item())
 
+            total_error += error.abs().sum().item()
+            total_squared_error += (error**2).sum().item()
             n_total += artificially_masked.sum().item()
 
-    total_error = np.array(total_error)
     losses = {
-        "mse": (total_error**2).sum() / n_total,
-        "mae": (np.abs(total_error)).sum() / n_total,
+        "mse": total_squared_error / n_total,
+        "mae": total_error / n_total,
     }
     return losses
